@@ -1,0 +1,9 @@
+genre,title_count,avg_imdb_rating,bubble_radius,color_hex
+Drama,1200,7.8,18,#E50914
+Action,820,7.5,14,#f97316
+Comedy,950,7.2,16,#eab308
+Documentary,640,8.4,11,#22c55e
+Horror,540,7.1,10,#8b5cf6
+Sci-Fi,480,7.6,9,#06b6d4
+Romance,610,6.9,11,#ec4899
+Thriller,780,8.0,13,#3b82f6

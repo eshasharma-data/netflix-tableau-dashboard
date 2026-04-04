@@ -1,0 +1,44 @@
+country,country_id,total_titles,movies,tv_shows,avg_imdb_rating,top_genre_1,top_genre_1_count,top_genre_2,top_genre_2_count,top_genre_3,top_genre_3_count
+United States,840,3211,2178,1033,7.4,Drama,820,Action,650,Comedy,580
+India,356,1046,972,74,6.9,Drama,340,Comedy,280,Action,220
+United Kingdom,826,806,524,282,7.6,Drama,290,Comedy,180,Documentary,140
+Canada,124,481,318,163,7.2,Drama,150,Comedy,120,Action,90
+Germany,276,432,296,136,7.5,Drama,160,Thriller,100,Comedy,80
+France,250,389,271,118,7.7,Drama,140,Comedy,90,Thriller,70
+Japan,392,370,245,125,7.8,Animation,120,Drama,100,Action,60
+Spain,724,310,208,102,7.3,Drama,110,Comedy,70,Thriller,60
+South Korea,410,292,184,108,8.1,Drama,120,Romance,60,Thriller,50
+Italy,380,268,194,74,7.2,Drama,100,Comedy,80,Thriller,50
+Brazil,76,241,168,73,7.0,Drama,90,Comedy,70,Action,40
+Mexico,484,212,152,60,7.1,Drama,80,Comedy,60,Action,40
+Australia,36,195,132,63,7.3,Drama,70,Comedy,50,Action,40
+Turkey,792,88,58,30,7.3,Drama,36,Comedy,22,Thriller,16
+Sweden,752,143,98,45,7.6,Drama,60,Thriller,40,Comedy,25
+Netherlands,528,132,90,42,7.4,Drama,50,Comedy,35,Thriller,28
+Argentina,32,98,70,28,7.1,Drama,36,Comedy,26,Thriller,18
+Portugal,620,98,66,32,7.2,Drama,38,Comedy,26,Thriller,20
+Poland,616,74,52,22,7.4,Drama,28,Thriller,20,Comedy,14
+China,156,76,54,22,7.4,Drama,28,Action,22,Comedy,14
+Belgium,56,66,46,20,7.3,Drama,24,Comedy,18,Thriller,14
+Norway,578,87,60,27,7.5,Drama,34,Thriller,24,Comedy,18
+Denmark,208,82,56,26,7.6,Drama,32,Thriller,22,Comedy,16
+Nigeria,566,44,36,8,6.9,Drama,18,Comedy,14,Action,8
+Thailand,764,52,38,14,7.2,Drama,20,Action,14,Comedy,10
+Colombia,170,58,42,16,7.0,Drama,22,Comedy,16,Action,11
+Chile,152,64,46,18,7.1,Drama,24,Comedy,18,Thriller,12
+Indonesia,360,44,32,12,7.0,Drama,18,Comedy,12,Action,8
+Malaysia,458,36,26,10,7.1,Drama,14,Comedy,10,Action,7
+Singapore,702,61,42,19,7.1,Drama,22,Action,16,Comedy,12
+South Africa,710,58,40,18,7.0,Drama,22,Action,16,Comedy,10
+New Zealand,554,55,38,17,7.2,Drama,20,Comedy,15,Action,10
+Austria,40,58,40,18,7.3,Drama,22,Comedy,16,Thriller,12
+Finland,246,64,44,20,7.3,Drama,25,Thriller,18,Comedy,12
+Saudi Arabia,682,24,18,6,7.0,Drama,9,Action,7,Comedy,5
+Egypt,818,52,38,14,7.0,Drama,22,Comedy,14,Action,10
+Morocco,504,22,17,5,7.0,Drama,9,Comedy,6,Action,4
+Qatar,634,18,14,4,7.1,Drama,7,Action,5,Comedy,4
+Pakistan,586,34,28,6,6.8,Drama,14,Action,10,Comedy,6
+Peru,604,28,22,6,6.9,Drama,11,Comedy,8,Action,5
+Uzbekistan,860,12,10,2,6.8,Drama,5,Comedy,4,Action,2
+Slovakia,703,28,20,8,7.1,Drama,11,Comedy,7,Thriller,6
+Croatia,191,24,17,7,7.1,Drama,10,Comedy,6,Thriller,5

@@ -1,0 +1,6 @@
+metric,all_content,movies,tv_shows,top_10,originals
+total_titles,8807,6131,2676,1670,2100
+active_genres,42,28,34,18,24
+avg_imdb_rating,7.2,7.4,7.0,8.1,7.7
+weekly_watch_hours_billions,2.4,1.6,0.8,1.1,0.9
+countries_available,116,116,116,116,116

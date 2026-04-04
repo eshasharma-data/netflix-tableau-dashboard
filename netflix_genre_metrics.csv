@@ -1,0 +1,11 @@
+genre,title_count,pct_of_total,avg_imdb_rating,weekly_watch_hours_millions,movies_count,shows_count
+Drama,1200,14,7.8,480,780,420
+Comedy,950,11,7.2,370,620,330
+Action,820,9,7.5,290,560,260
+Thriller,780,9,8.0,240,510,270
+Documentary,640,7,8.4,185,430,210
+Romance,610,7,6.9,160,400,210
+Horror,540,6,7.1,140,380,160
+Sci-Fi,480,5,7.6,120,330,150
+Animation,430,5,7.8,110,280,150
+Crime,380,4,7.3,95,250,130
