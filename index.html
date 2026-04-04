@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix Content Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #E50914;
+    --red-dim: #a3060f;
+    --bg: #0f0f0f;
+    --surface: #181818;
+    --card: #1e1e1e;
+    --card2: #262626;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --text: #e5e5e5;
+    --muted: #888;
+    --dim: #4a4a4a;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: #111;
+    border-bottom: 1px solid #1f1f1f;
+    padding: 0 28px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: var(--red);
+  }
+  .logo span { color: #fff; font-size: 13px; letter-spacing: 1px; margin-left: 10px; font-family: 'DM Sans', sans-serif; font-weight: 300; opacity: .5; }
+  .topnav { display: flex; gap: 4px; }
+  .tnav {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: .4px;
+    transition: all .2s;
+  }
+  .tnav:hover { background: var(--card2); color: var(--text); }
+  .tnav.active { background: var(--red); border-color: var(--red); color: #fff; }
+  .topright { font-size: 11px; color: var(--dim); letter-spacing: .3px; }
+
+  /* ── CONTENT WRAPPER ── */
+  .wrap { padding: 18px 28px 40px; }
+
+  /* ── FILTER BAR ── */
+  .filterbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .8px; margin-right: 4px; }
+  .pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .pill:hover { background: var(--card2); color: var(--text); border-color: var(--border2); }
+  .pill.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+  /* ── KPI CARDS ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 14px 16px;
+    transition: border-color .2s;
+  }
+  .kpi:hover { border-color: var(--border2); }
+  .kpi-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .kpi-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #fff; line-height: 1; margin: 4px 0 3px; }
+  .kpi-chg { font-size: 10px; }
+  .up { color: #22c55e; }
+  .dn { color: #ef4444; }
+
+  /* ── SECTION HEADERS ── */
+  .sec {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sec-accent { color: var(--red); }
+  .sec-ctrl { display: flex; gap: 4px; }
+  .sm-pill {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .15s;
+  }
+  .sm-pill:hover, .sm-pill.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  /* ── GRID LAYOUTS ── */
+  .grid-2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+  .grid-2b { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .mb { margin-bottom: 12px; }
+
+  /* ── CHART WRAPPERS ── */
+  .ch { position: relative; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .tab { font-size: 11px; color: var(--muted); padding: 6px 14px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; font-family: 'DM Sans', sans-serif; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .lg { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+  .lg-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── SLIDER ── */
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; color: var(--muted); }
+  .slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    outline: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--red);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .slider-val { color: #fff; font-weight: 500; min-width: 34px; text-align: right; }
+
+  /* ── MAP ── */
+  .map-wrap { position: relative; border-radius: 6px; overflow: hidden; background: #0d0d0d; }
+  .map-tip {
+    position: absolute;
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 12px;
+    color: #eee;
+    pointer-events: none;
+    display: none;
+    z-index: 50;
+    min-width: 170px;
+    max-width: 210px;
+    line-height: 1.6;
+  }
+  .map-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .map-legend-bar {
+    display: flex;
+    gap: 1px;
+  }
+  .map-legend-bar div {
+    width: 22px;
+    height: 8px;
+    border-radius: 1px;
+  }
+
+  /* ── COUNTRY TABLE ── */
+  .ctable { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .ctable th { color: var(--muted); font-weight: 500; padding: 4px 8px; border-bottom: 1px solid var(--border); text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .5px; }
+  .ctable td { padding: 6px 8px; border-bottom: 1px solid #1e1e1e; }
+  .ctable tr:hover td { background: var(--card2); }
+  .crank { color: var(--dim); font-size: 10px; }
+  .cname { font-weight: 500; }
+  .cbar-wrap { width: 60px; }
+  .cbar { height: 4px; border-radius: 2px; background: var(--red); }
+
+  /* ── SPARKLINE ── */
+  .spark { display: flex; align-items: flex-end; gap: 2px; height: 22px; }
+  .sb { width: 5px; border-radius: 1px 1px 0 0; background: var(--red); opacity: .65; }
+
+  /* ── DONUT CENTRE ── */
+  .donut-wrap { position: relative; }
+  .donut-centre {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  .donut-num { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: #fff; line-height: 1; }
+  .donut-sub { font-size: 9px; color: var(--muted); letter-spacing: .5px; }
+
+  /* ── ANIMATED ENTRY ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .card, .kpi { animation: fadeUp .4s ease both; }
+  .kpi:nth-child(1) { animation-delay: .04s; }
+  .kpi:nth-child(2) { animation-delay: .08s; }
+  .kpi:nth-child(3) { animation-delay: .12s; }
+  .kpi:nth-child(4) { animation-delay: .16s; }
+  .kpi:nth-child(5) { animation-delay: .20s; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">N <span>ANALYTICS</span></div>
+  <div class="topnav">
+    <button class="tnav active" onclick="setView('overview',this)">Overview</button>
+    <button class="tnav" onclick="setView('geography',this)">Geography</button>
+    <button class="tnav" onclick="setView('genres',this)">Genres</button>
+    <button class="tnav" onclick="setView('trends',this)">Trends</button>
+  </div>
+  <div class="topright">Netflix Content Analytics &nbsp;|&nbsp; Dec 2023 &nbsp;|&nbsp; 8,807 titles</div>
+</div>
+
+<div class="wrap">
+
+  <!-- GENRE FILTER PILLS -->
+  <div class="filterbar">
+    <span class="filter-label">Genre</span>
+    <button class="pill active" onclick="setGenre('All',this)">All</button>
+    <button class="pill" onclick="setGenre('Drama',this)">Drama</button>
+    <button class="pill" onclick="setGenre('Comedy',this)">Comedy</button>
+    <button class="pill" onclick="setGenre('Action',this)">Action</button>
+    <button class="pill" onclick="setGenre('Thriller',this)">Thriller</button>
+    <button class="pill" onclick="setGenre('Documentary',this)">Documentary</button>
+    <button class="pill" onclick="setGenre('Romance',this)">Romance</button>
+    <button class="pill" onclick="setGenre('Horror',this)">Horror</button>
+    <button class="pill" onclick="setGenre('Sci-Fi',this)">Sci-Fi</button>
+    <button class="pill" onclick="setGenre('Animation',this)">Animation</button>
+    <button class="pill" onclick="setGenre('Crime',this)">Crime</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-lbl">Total Titles</div><div class="kpi-val" id="kv1">8,807</div><div class="kpi-chg up">↑ 12% YoY</div></div>
+    <div class="kpi"><div class="kpi-lbl">Movies</div><div class="kpi-val" id="kv2">6,131</div><div class="kpi-chg up">↑ 9% YoY</div></div>
+    <div class="kpi"><div class="kpi-lbl">TV Shows</div><div class="kpi-val" id="kv3">2,676</div><div class="kpi-chg up">↑ 18% YoY</div></div>
+    <div class="kpi"><div class="kpi-lbl">Countries</div><div class="kpi-val" id="kv4">116</div><div class="kpi-chg up">↑ 8 new</div></div>
+    <div class="kpi"><div class="kpi-lbl">Avg IMDb</div><div class="kpi-val" id="kv5">7.2</div><div class="kpi-chg up">↑ 0.3 pts</div></div>
+  </div>
+
+  <!-- WORLD MAP -->
+  <div class="mb">
+    <div class="sec">
+      <span>World content <span class="sec-accent">distribution</span></span>
+      <div class="sec-ctrl">
+        <button class="sm-pill active" onclick="setMapMode('total',this)">Total</button>
+        <button class="sm-pill" onclick="setMapMode('movies',this)">Movies</button>
+        <button class="sm-pill" onclick="setMapMode('shows',this)">Shows</button>
+      </div>
+    </div>
+    <div class="card" style="padding:12px">
+      <div class="map-wrap" id="mapWrap">
+        <div class="map-tip" id="mapTip"></div>
+        <div id="worldMap"></div>
+      </div>
+      <div class="map-legend">
+        <span>Fewer</span>
+        <div class="map-legend-bar">
+          <div style="background:#1e0404"></div>
+          <div style="background:#4a0b0b"></div>
+          <div style="background:#7a1212"></div>
+          <div style="background:#b01818"></div>
+          <div style="background:#e50914"></div>
+        </div>
+        <span>More titles</span>
+        <span style="margin-left:auto;color:var(--dim)">Hover for details · Click to explore</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: BAR + DONUT -->
+  <div class="grid-2">
+    <div>
+      <div class="sec"><span>Titles by <span class="sec-accent">genre</span></span></div>
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" onclick="setBarTab('count',this)">Count</div>
+          <div class="tab" onclick="setBarTab('pct',this)">% of total</div>
+          <div class="tab" onclick="setBarTab('rating',this)">Avg rating</div>
+          <div class="tab" onclick="setBarTab('hours',this)">Watch hours</div>
+        </div>
+        <div class="ch" style="height:240px"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec"><span>Content <span class="sec-accent">mix</span></span></div>
+      <div class="card">
+        <div class="donut-wrap">
+          <div class="ch" style="height:180px"><canvas id="donutChart"></canvas></div>
+          <div class="donut-centre">
+            <div class="donut-num" id="donutTotal">8,807</div>
+            <div class="donut-sub">TITLES</div>
+          </div>
+        </div>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: LINE + RADAR + COUNTRY TABLE -->
+  <div class="grid-3">
+    <div>
+      <div class="sec"><span>Release <span class="sec-accent">trend</span></span></div>
+      <div class="card">
+        <div class="slider-row">
+          <span>From</span>
+          <input type="range" id="yrSlider" min="2008" max="2022" value="2015" step="1" oninput="updateLine(this.value)">
+          <span class="slider-val" id="yrVal">2015</span>
+          <span>→ 2023</span>
+        </div>
+        <div class="ch" style="height:190px"><canvas id="lineChart"></canvas></div>
+        <div class="legend">
+          <div class="lg"><div class="lg-sq" style="background:#E50914"></div>Drama</div>
+          <div class="lg"><div class="lg-sq" style="background:#f97316"></div>Action</div>
+          <div class="lg"><div class="lg-sq" style="background:#eab308"></div>Comedy</div>
+          <div class="lg"><div class="lg-sq" style="background:#8b5cf6"></div>Horror</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec"><span>Avg rating <span class="sec-accent">by genre</span></span></div>
+      <div class="card">
+        <div class="ch" style="height:230px"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec"><span>Top <span class="sec-accent">countries</span> by title count</span></div>
+      <div class="card" style="padding:12px 14px">
+        <table class="ctable" id="cTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Country</th>
+              <th>Titles</th>
+              <th>Split</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 4: BUBBLE + HBAR -->
+  <div class="grid-2b">
+    <div>
+      <div class="sec"><span>Rating vs. volume <span class="sec-accent">bubble chart</span></span></div>
+      <div class="card">
+        <div class="ch" style="height:230px"><canvas id="bubbleChart"></canvas></div>
+        <div class="legend">
+          <div class="lg"><div class="lg-sq" style="background:#E50914"></div>Drama</div>
+          <div class="lg"><div class="lg-sq" style="background:#f97316"></div>Action</div>
+          <div class="lg"><div class="lg-sq" style="background:#eab308"></div>Comedy</div>
+          <div class="lg"><div class="lg-sq" style="background:#22c55e"></div>Documentary</div>
+          <div class="lg"><div class="lg-sq" style="background:#8b5cf6"></div>Horror</div>
+          <div class="lg"><div class="lg-sq" style="background:#06b6d4"></div>Sci-Fi</div>
+          <div class="lg"><div class="lg-sq" style="background:#ec4899"></div>Romance</div>
+          <div class="lg"><div class="lg-sq" style="background:#3b82f6"></div>Thriller</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec"><span>Weekly watch hours <span class="sec-accent">by genre</span></span></div>
+      <div class="card">
+        <div class="ch" style="height:290px"><canvas id="hbarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ────────── DATA ────────── */
+const GENRES = ['Drama','Comedy','Action','Thriller','Documentary','Romance','Horror','Sci-Fi','Animation','Crime'];
+const GCOL = ['#E50914','#f97316','#eab308','#3b82f6','#22c55e','#ec4899','#8b5cf6','#06b6d4','#a3e635','#f43f5e'];
+
+const GDATA = {
+  count:  [1200,950,820,780,640,610,540,480,430,380],
+  pct:    [14,11,9,9,7,7,6,5,5,4],
+  rating: [7.8,7.2,7.5,8.0,8.4,6.9,7.1,7.6,7.8,7.3],
+  hours:  [480,370,290,240,185,160,140,120,110,95]
+};
+
+const DONUT = {
+  labels:['Drama','Comedy','Action','Thriller','Documentary','Other'],
+  data:  [2800,1800,1600,800,640,1167],
+  cols:  ['#E50914','#f97316','#eab308','#3b82f6','#22c55e','#333']
+};
+
+const LINE_ALL = {
+  years: [2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023],
+  Drama:  [22,28,36,46,58,70,82,95,108,125,148,178,230,278,335,395],
+  Action: [14,18,24,30,38,48,56,62,74,88,104,126,162,198,240,288],
+  Comedy: [18,24,30,38,48,60,70,78,90,103,118,138,172,208,250,296],
+  Horror: [6,8,12,16,20,24,28,28,34,42,52,62,80,100,124,150]
+};
+
+const COUNTRIES = [
+  {name:'United States', total:3211, movies:2178, shows:1033, rating:7.4, topG:'Drama'},
+  {name:'India',         total:1046, movies:972,  shows:74,   rating:6.9, topG:'Drama'},
+  {name:'United Kingdom',total:806,  movies:524,  shows:282,  rating:7.6, topG:'Drama'},
+  {name:'Canada',        total:481,  movies:318,  shows:163,  rating:7.2, topG:'Drama'},
+  {name:'Germany',       total:432,  movies:296,  shows:136,  rating:7.5, topG:'Drama'},
+  {name:'France',        total:389,  movies:271,  shows:118,  rating:7.7, topG:'Drama'},
+  {name:'Japan',         total:370,  movies:245,  shows:125,  rating:7.8, topG:'Animation'},
+  {name:'Spain',         total:310,  movies:208,  shows:102,  rating:7.3, topG:'Drama'},
+  {name:'South Korea',   total:292,  movies:184,  shows:108,  rating:8.1, topG:'Drama'},
+  {name:'Italy',         total:268,  movies:194,  shows:74,   rating:7.2, topG:'Drama'},
+];
+
+const COUNTRY_MAP = {
+  840:{name:'United States',total:3211,movies:2178,shows:1033,rating:7.4,genres:'Drama 820 · Action 650 · Comedy 580'},
+  356:{name:'India',total:1046,movies:972,shows:74,rating:6.9,genres:'Drama 340 · Comedy 280 · Action 220'},
+  826:{name:'United Kingdom',total:806,movies:524,shows:282,rating:7.6,genres:'Drama 290 · Comedy 180 · Docu 140'},
+  124:{name:'Canada',total:481,movies:318,shows:163,rating:7.2,genres:'Drama 150 · Comedy 120 · Action 90'},
+  276:{name:'Germany',total:432,movies:296,shows:136,rating:7.5,genres:'Drama 160 · Thriller 100 · Comedy 80'},
+  250:{name:'France',total:389,movies:271,shows:118,rating:7.7,genres:'Drama 140 · Comedy 90 · Thriller 70'},
+  392:{name:'Japan',total:370,movies:245,shows:125,rating:7.8,genres:'Animation 120 · Drama 100 · Action 60'},
+  724:{name:'Spain',total:310,movies:208,shows:102,rating:7.3,genres:'Drama 110 · Comedy 70 · Thriller 60'},
+  410:{name:'South Korea',total:292,movies:184,shows:108,rating:8.1,genres:'Drama 120 · Romance 60 · Thriller 50'},
+  380:{name:'Italy',total:268,movies:194,shows:74,rating:7.2,genres:'Drama 100 · Comedy 80 · Thriller 50'},
+  76:{name:'Brazil',total:241,movies:168,shows:73,rating:7.0,genres:'Drama 90 · Comedy 70 · Action 40'},
+  484:{name:'Mexico',total:212,movies:152,shows:60,rating:7.1,genres:'Drama 80 · Comedy 60 · Action 40'},
+  36:{name:'Australia',total:195,movies:132,shows:63,rating:7.3,genres:'Drama 70 · Comedy 50 · Action 40'},
+  792:{name:'Turkey',total:88,movies:58,shows:30,rating:7.3,genres:'Drama 36 · Comedy 22 · Thriller 16'},
+  752:{name:'Sweden',total:143,movies:98,shows:45,rating:7.6,genres:'Drama 60 · Thriller 40 · Comedy 25'},
+  528:{name:'Netherlands',total:132,movies:90,shows:42,rating:7.4,genres:'Drama 50 · Comedy 35 · Thriller 28'},
+  32:{name:'Argentina',total:98,movies:70,shows:28,rating:7.1,genres:'Drama 36 · Comedy 26 · Thriller 18'},
+  620:{name:'Portugal',total:98,movies:66,shows:32,rating:7.2,genres:'Drama 38 · Comedy 26 · Thriller 20'},
+  616:{name:'Poland',total:74,movies:52,shows:22,rating:7.4,genres:'Drama 28 · Thriller 20 · Comedy 14'},
+  156:{name:'China',total:76,movies:54,shows:22,rating:7.4,genres:'Drama 28 · Action 22 · Comedy 14'},
+  56:{name:'Belgium',total:66,movies:46,shows:20,rating:7.3,genres:'Drama 24 · Comedy 18 · Thriller 14'},
+  578:{name:'Norway',total:87,movies:60,shows:27,rating:7.5,genres:'Drama 34 · Thriller 24 · Comedy 18'},
+  208:{name:'Denmark',total:82,movies:56,shows:26,rating:7.6,genres:'Drama 32 · Thriller 22 · Comedy 16'},
+  566:{name:'Nigeria',total:44,movies:36,shows:8,rating:6.9,genres:'Drama 18 · Comedy 14 · Action 8'},
+  764:{name:'Thailand',total:52,movies:38,shows:14,rating:7.2,genres:'Drama 20 · Action 14 · Comedy 10'},
+  170:{name:'Colombia',total:58,movies:42,shows:16,rating:7.0,genres:'Drama 22 · Comedy 16 · Action 11'},
+  152:{name:'Chile',total:64,movies:46,shows:18,rating:7.1,genres:'Drama 24 · Comedy 18 · Thriller 12'},
+  360:{name:'Indonesia',total:44,movies:32,shows:12,rating:7.0,genres:'Drama 18 · Comedy 12 · Action 8'},
+  458:{name:'Malaysia',total:36,movies:26,shows:10,rating:7.1,genres:'Drama 14 · Comedy 10 · Action 7'},
+  702:{name:'Singapore',total:61,movies:42,shows:19,rating:7.1,genres:'Drama 22 · Action 16 · Comedy 12'},
+  710:{name:'South Africa',total:58,movies:40,shows:18,rating:7.0,genres:'Drama 22 · Action 16 · Comedy 10'},
+  554:{name:'New Zealand',total:55,movies:38,shows:17,rating:7.2,genres:'Drama 20 · Comedy 15 · Action 10'},
+  40:{name:'Austria',total:58,movies:40,shows:18,rating:7.3,genres:'Drama 22 · Comedy 16 · Thriller 12'},
+  246:{name:'Finland',total:64,movies:44,shows:20,rating:7.3,genres:'Drama 25 · Thriller 18 · Comedy 12'},
+  818:{name:'Egypt',total:52,movies:38,shows:14,rating:7.0,genres:'Drama 22 · Comedy 14 · Action 10'},
+  504:{name:'Morocco',total:22,movies:17,shows:5,rating:7.0,genres:'Drama 9 · Comedy 6 · Action 4'},
+  682:{name:'Saudi Arabia',total:24,movies:18,shows:6,rating:7.0,genres:'Drama 9 · Action 7 · Comedy 5'},
+  604:{name:'Peru',total:28,movies:22,shows:6,rating:6.9,genres:'Drama 11 · Comedy 8 · Action 5'},
+  586:{name:'Pakistan',total:34,movies:28,shows:6,rating:6.8,genres:'Drama 14 · Action 10 · Comedy 6'},
+};
+
+const KPI_BY_GENRE = {
+  All:          ['8,807','6,131','2,676','116','7.2'],
+  Drama:        ['1,200','780','420','89','7.8'],
+  Comedy:       ['950','620','330','76','7.2'],
+  Action:       ['820','560','260','72','7.5'],
+  Thriller:     ['780','510','270','65','8.0'],
+  Documentary:  ['640','430','210','58','8.4'],
+  Romance:      ['610','400','210','55','6.9'],
+  Horror:       ['540','380','160','48','7.1'],
+  'Sci-Fi':     ['480','330','150','42','7.6'],
+  Animation:    ['430','280','150','38','7.8'],
+  Crime:        ['380','250','130','36','7.3'],
+};
+
+const BUBBLE_DATA = [
+  {x:1200,y:7.8,r:18,label:'Drama',   color:'#E50914'},
+  {x:820, y:7.5,r:14,label:'Action',  color:'#f97316'},
+  {x:950, y:7.2,r:16,label:'Comedy',  color:'#eab308'},
+  {x:640, y:8.4,r:11,label:'Documentary',color:'#22c55e'},
+  {x:540, y:7.1,r:10,label:'Horror',  color:'#8b5cf6'},
+  {x:480, y:7.6,r:9, label:'Sci-Fi',  color:'#06b6d4'},
+  {x:610, y:6.9,r:11,label:'Romance', color:'#ec4899'},
+  {x:780, y:8.0,r:13,label:'Thriller',color:'#3b82f6'},
+];
+
+/* ────────── STATE ────────── */
+let activeGenre = 'All';
+let barTab = 'count';
+let mapMode = 'total';
+let charts = {};
+let countryPaths = null;
+
+/* ────────── KPI UPDATE ────────── */
+function updateKPIs(genre) {
+  const v = KPI_BY_GENRE[genre] || KPI_BY_GENRE['All'];
+  ['kv1','kv2','kv3','kv4','kv5'].forEach((id,i) => {
+    document.getElementById(id).textContent = v[i];
+  });
+}
+
+/* ────────── GENRE FILTER ────────── */
+function setGenre(g, el) {
+  activeGenre = g;
+  document.querySelectorAll('.filterbar .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  updateKPIs(g);
+  updateBarChart();
+  updateDonut();
+  updateMapColors();
+}
+
+/* ────────── VIEW TABS ────────── */
+function setView(v, el) {
+  document.querySelectorAll('.tnav').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ────────── MAP MODE ────────── */
+function setMapMode(m, el) {
+  mapMode = m;
+  document.querySelectorAll('.sec-ctrl .sm-pill').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  updateMapColors();
+}
+
+function updateMapColors() {
+  if (!countryPaths) return;
+  const maxVal = Math.max(...Object.values(COUNTRY_MAP).map(c =>
+    mapMode === 'movies' ? c.movies : mapMode === 'shows' ? c.shows : c.total));
+  const colorScale = d3.scaleSequential([0, maxVal], d3.interpolate('#1e0404','#E50914'));
+  countryPaths.attr('fill', d => {
+    const cd = COUNTRY_MAP[+d.id];
+    if (!cd) return 'transparent';
+    const v = mapMode === 'movies' ? cd.movies : mapMode === 'shows' ? cd.shows : cd.total;
+    return colorScale(v);
+  });
+}
+
+/* ────────── BAR CHART ────────── */
+function setBarTab(t, el) {
+  barTab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  updateBarChart();
+}
+
+function updateBarChart() {
+  const dataKey = barTab === 'count' ? 'count' : barTab === 'pct' ? 'pct' : barTab === 'rating' ? 'rating' : 'hours';
+  let data = [...GDATA[dataKey]];
+  if (activeGenre !== 'All') {
+    const idx = GENRES.indexOf(activeGenre);
+    data = data.map((v, i) => i === idx ? v : v * 0.15);
+  }
+  charts.bar.data.datasets[0].data = data;
+  const labels = { count:'Title count', pct:'% of catalogue', rating:'Avg IMDb rating', hours:'Watch hours (M/wk)' };
+  charts.bar.options.scales.y.title = { display: true, text: labels[barTab], color:'#555', font:{size:9} };
+  charts.bar.update('active');
+}
+
+/* ────────── DONUT ────────── */
+function updateDonut() {
+  let data = [...DONUT.data];
+  if (activeGenre !== 'All') {
+    const idx = DONUT.labels.findIndex(l => l.toLowerCase() === activeGenre.toLowerCase());
+    data = data.map((v, i) => i === idx ? v : Math.round(v * 0.2));
+  }
+  charts.donut.data.datasets[0].data = data;
+  charts.donut.update('active');
+  const total = data.reduce((a, b) => a + b, 0);
+  document.getElementById('donutTotal').textContent = total.toLocaleString();
+  renderDonutLegend(data);
+}
+
+function renderDonutLegend(data) {
+  const total = data.reduce((a, b) => a + b, 0);
+  document.getElementById('donutLegend').innerHTML = DONUT.labels.map((l, i) =>
+    `<div class="lg"><div class="lg-sq" style="background:${DONUT.cols[i]}"></div>${l} <span style="color:#ccc;margin-left:2px">${Math.round(data[i]/total*100)}%</span></div>`
+  ).join('');
+}
+
+/* ────────── LINE CHART ────────── */
+function updateLine(fromYear) {
+  fromYear = +fromYear;
+  document.getElementById('yrVal').textContent = fromYear;
+  const startIdx = LINE_ALL.years.indexOf(fromYear);
+  const labels = LINE_ALL.years.slice(startIdx).map(String);
+  charts.line.data.labels = labels;
+  ['Drama','Action','Comedy','Horror'].forEach((g, i) => {
+    charts.line.data.datasets[i].data = LINE_ALL[g].slice(startIdx);
+  });
+  charts.line.update('active');
+}
+
+/* ────────── COUNTRY TABLE ────────── */
+function buildCountryTable() {
+  const max = COUNTRIES[0].total;
+  const tbody = document.querySelector('#cTable tbody');
+  tbody.innerHTML = COUNTRIES.map((c, i) => {
+    const pct = Math.round(c.movies / c.total * 100);
+    const spark = [.55,.62,.68,.74,.8,.88,.94,1].map(f =>
+      `<div class="sb" style="height:${Math.round(f*18)}px"></div>`).join('');
+    return `<tr>
+      <td class="crank">${i+1}</td>
+      <td class="cname">${c.name}</td>
+      <td>${c.total.toLocaleString()}</td>
+      <td><div class="cbar-wrap"><div class="cbar" style="width:${Math.round(c.total/max*56)}px"></div><div style="font-size:9px;color:var(--muted);margin-top:2px">${pct}% films</div></div></td>
+      <td><div class="spark">${spark}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ────────── WORLD MAP ────────── */
+function buildMap() {
+  const wrap = document.getElementById('mapWrap');
+  const tip = document.getElementById('mapTip');
+  const w = wrap.offsetWidth || 900;
+  const h = Math.round(w * 0.46);
+  const svg = d3.select('#worldMap').append('svg')
+    .attr('viewBox', `0 0 ${w} ${h}`)
+    .attr('width', '100%')
+    .style('display', 'block');
+  const proj = d3.geoNaturalEarth1().scale(w / 6.1).translate([w / 2, h / 2]);
+  const path = d3.geoPath(proj);
+  const colorScale = d3.scaleSequential([0, 3211], d3.interpolate('#1e0404','#E50914'));
+
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(world => {
+    const countries = topojson.feature(world, world.objects.countries);
+    svg.append('g').selectAll('path').data(countries.features).join('path')
+      .attr('d', path).attr('fill','#141414').attr('stroke','none');
+
+    countryPaths = svg.append('g').selectAll('path').data(countries.features).join('path')
+      .attr('d', path)
+      .attr('stroke','#2a2a2a').attr('stroke-width', 0.4)
+      .attr('fill', d => {
+        const cd = COUNTRY_MAP[+d.id];
+        return cd ? colorScale(cd.total) : 'transparent';
+      })
+      .attr('cursor', d => COUNTRY_MAP[+d.id] ? 'pointer' : 'default')
+      .on('mouseover', function(e, d) {
+        const cd = COUNTRY_MAP[+d.id];
+        if (!cd) return;
+        d3.select(this).attr('stroke','#fff').attr('stroke-width', 1);
+        const val = mapMode === 'movies' ? cd.movies : mapMode === 'shows' ? cd.shows : cd.total;
+        tip.style.display = 'block';
+        tip.innerHTML = `<strong style="color:#fff;font-size:13px">${cd.name}</strong><br>
+          <span style="color:#aaa">Total: </span><strong style="color:#fff">${cd.total.toLocaleString()}</strong><br>
+          <span style="color:#aaa">Movies: </span><strong style="color:#E50914">${cd.movies.toLocaleString()}</strong>
+          &nbsp;<span style="color:#aaa">Shows: </span><strong style="color:#f97316">${cd.shows.toLocaleString()}</strong><br>
+          <span style="color:#aaa">Avg rating: </span><strong style="color:#eab308">${cd.rating}</strong><br>
+          <div style="margin-top:5px;font-size:10px;color:#666">Top genres<br><span style="color:#888">${cd.genres}</span></div>`;
+      })
+      .on('mousemove', function(e) {
+        const box = wrap.getBoundingClientRect();
+        let lx = e.clientX - box.left + 14;
+        let ly = e.clientY - box.top + 14;
+        if (lx + 220 > wrap.offsetWidth) lx -= 230;
+        tip.style.left = lx + 'px';
+        tip.style.top = ly + 'px';
+      })
+      .on('mouseleave', function() {
+        d3.select(this).attr('stroke','#2a2a2a').attr('stroke-width', 0.4);
+        tip.style.display = 'none';
+      });
+  });
+}
+
+/* ────────── INIT CHARTS ────────── */
+function initCharts() {
+  const gridColor = '#252525';
+  const axisColor = '#555';
+  const tickFont = { size: 9 };
+
+  /* BAR */
+  charts.bar = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: GENRES,
+      datasets: [{ data: GDATA.count, backgroundColor: GCOL, borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.raw.toLocaleString()}` } } },
+      scales: {
+        x: { ticks: { color: axisColor, font: tickFont }, grid: { color: gridColor }, border: { color: '#333' } },
+        y: { ticks: { color: axisColor, font: tickFont }, grid: { color: gridColor }, border: { color: '#333' } }
+      }
+    }
+  });
+
+  /* DONUT */
+  charts.donut = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: { labels: DONUT.labels, datasets: [{ data: DONUT.data, backgroundColor: DONUT.cols, borderWidth: 0, hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${Math.round(c.raw / c.dataset.data.reduce((a,b)=>a+b) * 100)}%` } }
+      }
+    }
+  });
+  renderDonutLegend(DONUT.data);
+
+  /* LINE */
+  const lineColors = ['#E50914','#f97316','#eab308','#8b5cf6'];
+  charts.line = new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+      labels: LINE_ALL.years.slice(7).map(String),
+      datasets: ['Drama','Action','Comedy','Horror'].map((g, i) => ({
+        label: g,
+        data: LINE_ALL[g].slice(7),
+        borderColor: lineColors[i],
+        tension: 0.4, pointRadius: 0, borderWidth: 1.8, fill: false
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { ticks: { color: axisColor, font: tickFont, maxRotation: 0 }, grid: { color: gridColor }, border: { color: '#333' } },
+        y: { ticks: { color: axisColor, font: tickFont }, grid: { color: gridColor }, border: { color: '#333' } }
+      }
+    }
+  });
+
+  /* RADAR */
+  charts.radar = new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: GENRES.map(g => g.length > 7 ? g.slice(0,6)+'…' : g),
+      datasets: [{
+        data: GDATA.rating,
+        backgroundColor: 'rgba(229,9,20,.1)',
+        borderColor: '#E50914',
+        pointBackgroundColor: '#E50914',
+        pointRadius: 3, borderWidth: 1.5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 6, max: 9,
+          ticks: { display: false, stepSize: .5 },
+          grid: { color: '#2e2e2e' },
+          angleLines: { color: '#2e2e2e' },
+          pointLabels: { color: '#666', font: { size: 9 } }
+        }
+      }
+    }
+  });
+
+  /* BUBBLE */
+  charts.bubble = new Chart(document.getElementById('bubbleChart'), {
+    type: 'bubble',
+    data: {
+      datasets: BUBBLE_DATA.map(b => ({
+        label: b.label,
+        data: [{ x: b.x, y: b.y, r: b.r }],
+        backgroundColor: b.color + '99',
+        borderColor: b.color,
+        borderWidth: 1
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top:10, bottom:10, left:10, right:10 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.raw.x} titles · ${c.raw.y} IMDb` } }
+      },
+      scales: {
+        x: { min:200, max:1400, title:{ display:true, text:'Title count', color:axisColor, font:tickFont }, ticks:{ color:axisColor, font:tickFont }, grid:{ color:gridColor }, border:{ color:'#333' } },
+        y: { min:6.4, max:9.0, title:{ display:true, text:'Avg IMDb', color:axisColor, font:tickFont }, ticks:{ color:axisColor, font:tickFont }, grid:{ color:gridColor }, border:{ color:'#333' } }
+      }
+    }
+  });
+
+  /* HBAR */
+  charts.hbar = new Chart(document.getElementById('hbarChart'), {
+    type: 'bar',
+    data: {
+      labels: GENRES,
+      datasets: [{ data: GDATA.hours, backgroundColor: GCOL, borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{ display:false }, tooltip:{ callbacks:{ label: c => ` ${c.raw}M hrs/wk` } } },
+      scales: {
+        x: { ticks:{ color:axisColor, font:tickFont }, grid:{ color:gridColor }, border:{ color:'#333' } },
+        y: { ticks:{ color:'#888', font:tickFont }, grid:{ display:false }, border:{ color:'#333' } }
+      }
+    }
+  });
+}
+
+/* ────────── BOOT ────────── */
+buildCountryTable();
+initCharts();
+buildMap();
+</script>
+</body>
+</html>
