@@ -1,6 +1,1 @@
-cd netflix-tableau-dashboard
-   git init
-   git add .
-   git commit -m "Initial commit: Netflix Tableau dashboard project"
-   git remote add origin https://github.com/YOUR_USERNAME/netflix-tableau-dashboard.git
-   git push -u origin main# netflix-tableau-dashboard
+An interactive analytics dashboard visualising Netflix's global content library of 8,807 titles across 10 genres and 116 countries. Includes 6 structured CSV datasets, a full Tableau Desktop rebuild guide, and a data dictionary.
